@@ -1,5 +1,12 @@
 import os
 from PyPDF2 import PdfReader
+import csv
+
+# Initialize variables
+InvoiceNo = None
+Price = None
+Issuer = None
+Date = None
 
 # Loop through PDF files
 for filename in os.listdir("."):
@@ -17,38 +24,43 @@ for filename in os.listdir("."):
             with open("bolt.csv", "a") as pdfconvert:
                 pdfconvert.write(text + "\n")
 
-# Initialize variables
-InvoiceNo = None
-Price = None
-Issuer = None
+        # Process CSV data for each PDF
+        with open("bolt.csv", "r") as text_file, open("finaldata.csv", "a", newline="\n") as finaldata:
+            csv_writer = csv.writer(finaldata)
+            lines = text_file.readlines()
+            printed_lines = set()
 
-# Process CSV data
-with open("bolt.csv", "r") as text_file, open("finaldata.csv", "a") as finaldata:
-    lines = text_file.readlines()
-    printed_lines = set()
+            for line in lines:
+                stripped_line = line.strip()
 
-    for line in lines:
-        stripped_line = line.strip()
+                if "(RON)" in stripped_line and "including" in stripped_line and stripped_line not in printed_lines:
+                    Price = stripped_line
+                    printed_lines.add(Price)
+                    Price = Price.replace("T otal  including  V A T  (RON): ","")
 
-        if "(RON)" in stripped_line and "including" in stripped_line and stripped_line not in printed_lines:
-            Price = stripped_line
-            print(Price)
-            printed_lines.add(Price)
-            finaldata.write(Price.replace("T otal  including  V A T  (RON): ", "") + "\n")
+                if "Invoice  no." in stripped_line and stripped_line not in printed_lines:
+                    InvoiceNo = stripped_line
+                    printed_lines.add(InvoiceNo)
+                    InvoiceNo = InvoiceNo.replace("Invoice  no.  ", "")
 
-        if "Invoice  no." in stripped_line and stripped_line not in printed_lines:
-            InvoiceNo = stripped_line
-            print(InvoiceNo)
-            printed_lines.add(InvoiceNo)
-            finaldata.write(InvoiceNo.replace("Invoice  no.  ", "") + "\n")
+                if "Issued  on  behalf  of  " in stripped_line and stripped_line not in printed_lines:
+                    Issuer = stripped_line
+                    Issuer = Issuer.replace("Issued  on  behalf  of  ", "")
+                    Issuer = Issuer.replace("by  Bolt  Operations  OÜ  /  V ana - L õuna  15,  T allinn  10134,", "")
+                    printed_lines.add(Issuer)
 
-        if "Issued  on  behalf  of  " in stripped_line and stripped_line not in printed_lines:
-            Issuer = stripped_line
-            print(Issuer)
-            printed_lines.add(Issuer)
-            Issuer = Issuer.replace("Issued  on  behalf  of  ", "")
-            Issuer = Issuer.replace("by  Bolt  Operations  OÜ  /  V ana - L õuna  15,  T allinn  10134,", "")
-            finaldata.write(Issuer + "\n")
+                if "Date:  " in stripped_line and stripped_line not in printed_lines:
+                    Date = stripped_line
+                    Date = Date.replace("Date:  ", "")
+                    printed_lines.add(Date)
+
+            # Check if all information is available before writing to CSV
+            if all([InvoiceNo, Price, Issuer, Date]):
+                csv_data = [
+                    ["InvoiceNo", "Price", "Issuer", "Date"],
+                    [InvoiceNo, Price, Issuer, Date]
+                ]
+                csv_writer.writerows(csv_data)
 
 
 os.remove("bolt.csv")
