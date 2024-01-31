@@ -1,66 +1,119 @@
 import os
 from PyPDF2 import PdfReader
 import csv
+from openpyxl import load_workbook
+
+from romanian_months import *
+
+
+#To avoid repetition/clutter of bills
+os.remove("finaldata.csv")
+
+UserName = input("Nume angajat(POPESCU ION): ")
+
 
 # Initialize variables
-InvoiceNo = None
-Price = None
-Issuer = None
-Date = None
+InvoiceNumbers = []
+Issuers = []
+Prices = []
+Dates = []
 
 # Loop through PDF files
 for filename in os.listdir("."):
     if filename.endswith(".pdf"):
         pdf_path = os.path.join(".", filename)
-
-        # creating a pdf reader object 
         reader = PdfReader(pdf_path)
 
-        # Loop through all pages and extract text
+        # Extract text from all pages
+        text = ""
         for page in reader.pages:
-            text = page.extract_text()
+            text += page.extract_text()
 
-            # Write the text to a CSV file
-            with open("bolt.csv", "a") as pdfconvert:
-                pdfconvert.write(text + "\n")
 
-        # Process CSV data for each PDF
-        with open("bolt.csv", "r") as text_file, open("finaldata.csv", "a", newline="\n") as finaldata:
-            csv_writer = csv.writer(finaldata)
-            lines = text_file.readlines()
-            printed_lines = set()
+        # Initialize our needed values
+        Price = None
+        InvoiceNo = None
+        Issuer = None
+        Date = None
 
-            for line in lines:
-                stripped_line = line.strip()
+        printed_lines = set()
 
-                if "(RON)" in stripped_line and "including" in stripped_line and stripped_line not in printed_lines:
-                    Price = stripped_line
-                    printed_lines.add(Price)
-                    Price = Price.replace("T otal  including  V A T  (RON): ","")
+        for line in text.split("\n"):
+            stripped_line = line.strip()
 
-                if "Invoice  no." in stripped_line and stripped_line not in printed_lines:
-                    InvoiceNo = stripped_line
-                    printed_lines.add(InvoiceNo)
-                    InvoiceNo = InvoiceNo.replace("Invoice  no.  ", "")
+            if "(RON)" in stripped_line and "including" in stripped_line and stripped_line not in printed_lines:
+                Price = stripped_line.replace("T otal  including  V A T  (RON): ", "")  
+                Prices.append(Price)
+                printed_lines.add(Price)
 
-                if "Issued  on  behalf  of  " in stripped_line and stripped_line not in printed_lines:
-                    Issuer = stripped_line
-                    Issuer = Issuer.replace("Issued  on  behalf  of  ", "")
-                    Issuer = Issuer.replace("by  Bolt  Operations  OÜ  /  V ana - L õuna  15,  T allinn  10134,", "")
-                    printed_lines.add(Issuer)
+            if "Invoice  no." in stripped_line and stripped_line not in printed_lines:
+                InvoiceNo = stripped_line.replace("Invoice  no.  ", "")
+                InvoiceNumbers.append(InvoiceNo)
+                printed_lines.add(InvoiceNo)
 
-                if "Date:  " in stripped_line and stripped_line not in printed_lines:
-                    Date = stripped_line
-                    Date = Date.replace("Date:  ", "")
-                    printed_lines.add(Date)
+            if "Issued  on  behalf  of  " in stripped_line and stripped_line not in printed_lines:
+                Issuer = stripped_line.replace("Issued  on  behalf  of  ", "")
+                Issuer = Issuer.replace("by  Bolt  Operations  OÜ  /  V ana - L õuna  15,  T allinn  10134,", "")
+                Issuers.append(Issuer)
+                printed_lines.add(Issuer)
 
-            # Check if all information is available before writing to CSV
-            if all([InvoiceNo, Price, Issuer, Date]):
-                csv_data = [
-                    ["InvoiceNo", "Price", "Issuer", "Date"],
-                    [InvoiceNo, Price, Issuer, Date]
-                ]
+            if "Date:  " in stripped_line and stripped_line not in printed_lines:
+                Date = stripped_line.replace("Date:  ", "")
+                Dates.append(Date)
+                printed_lines.add(Date)
+        
+
+        # Check if all information is available before writing to CSV
+        if all([InvoiceNo, Price, Issuer, Date]):
+            csv_data = [
+                ["InvoiceNo", "Price", "Issuer", "Date"],
+                [InvoiceNo, Price, Issuer, Date]
+            ]
+            
+            # Append data to the CSV file
+            with open("finaldata.csv", "a", newline="\n") as finaldata:
+                csv_writer = csv.writer(finaldata)
                 csv_writer.writerows(csv_data)
 
 
-os.remove("bolt.csv")
+# From this part on, the data is written in Excel
+                
+for filename in os.listdir("."):
+    if filename.endswith(".xlsx"):
+        xlspath = os.path.join(".",filename)
+
+wb = load_workbook(xlspath)
+ws = wb.active
+
+
+# Single values
+ws["D6"] = formatted_date
+ws["D4"] = UserName
+
+# Usually multiple values, unless you have just one bill
+start_invoice = "B13"
+start_issuer = "D13"
+start_price = "G13"
+start_date = "C13"
+
+for i, invoice in enumerate(InvoiceNumbers):
+    ws[start_invoice] = invoice
+    start_invoice = f'B{13 + i + 1}'
+
+for i, issuer in enumerate(Issuers):
+    
+    ws[start_issuer] = issuer
+    start_issuer = f'D{13 + i + 1}'
+
+for i, price in enumerate(Prices):
+    
+    ws[start_price] = float(price)
+    start_price = f'G{13 + i + 1}'
+
+for i, date in enumerate(Dates):
+    
+    ws[start_date] = date
+    start_date = f'C{13 + i + 1}'
+
+# The proper file name is written automatically, one less thing to manually worry about :) 
+wb.save("Decont " + current_month_ro + " " + current_year + " " + UserName + ".xlsx")
