@@ -7,7 +7,9 @@ from romanian_months import *
 
 
 #To avoid repetition/clutter of bills
-os.remove("finaldata.csv")
+if os.path.exists("finaldata.csv"):
+    os.remove("finaldata.csv")
+
 
 UserName = input("Nume angajat(POPESCU ION): ")
 
@@ -71,7 +73,7 @@ for filename in os.listdir("."):
             ]
             
             # Append data to the CSV file
-            with open("finaldata.csv", "a", newline="\n") as finaldata:
+            with open("finaldata.csv", "+w", newline="\n") as finaldata:
                 csv_writer = csv.writer(finaldata)
                 csv_writer.writerows(csv_data)
 
