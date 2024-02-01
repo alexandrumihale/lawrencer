@@ -11,8 +11,8 @@ if os.path.exists("finaldata.csv"):
     os.remove("finaldata.csv")
 
 
-UserName = input("Nume angajat(POPESCU ION): ")
-# UserName = "Popescu Ion"
+UserName = input("Nume angajat(Popescu Ion): ")
+ExpenseCode = input("Cod decontare (sau explicatie cost):")
 
 # Initialize variables
 InvoiceNumbers = []
@@ -104,7 +104,7 @@ start_info = "H13"
 for i, invoice in enumerate(InvoiceNumbers):
 
     ws[start_invoice] = invoice
-    ws[start_info] = "transport client distop5101/113/9*7"
+    ws[start_info] = ExpenseCode
     start_invoice = f'B{13 + i + 1}'
     start_info = f'H{13 + i + 1}'
     
@@ -124,7 +124,6 @@ for i, date in enumerate(Dates):
     ws[start_date] = date
     start_date = f'C{13 + i + 1}'
 
-os.remove("finaldata.csv")
 
 # The proper file name is written automatically, one less thing to manually worry about :) 
 wb.save("Decont " + current_month_ro + " " + current_year + " " + UserName + ".xlsx")
