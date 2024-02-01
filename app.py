@@ -12,7 +12,7 @@ if os.path.exists("finaldata.csv"):
 
 
 UserName = input("Nume angajat(POPESCU ION): ")
-
+# UserName = "Popescu Ion"
 
 # Initialize variables
 InvoiceNumbers = []
@@ -55,7 +55,8 @@ for filename in os.listdir("."):
 
             if "Issued  on  behalf  of  " in stripped_line and stripped_line not in printed_lines:
                 Issuer = stripped_line.replace("Issued  on  behalf  of  ", "")
-                Issuer = Issuer.replace("by  Bolt  Operations  OÜ  /  V ana - L õuna  15,  T allinn  10134,", "")
+                Issuer = Issuer.split("by  Bolt  Operations", 1)
+                Issuer = Issuer[0]
                 Issuers.append(Issuer)
                 printed_lines.add(Issuer)
 
@@ -73,7 +74,7 @@ for filename in os.listdir("."):
             ]
             
             # Append data to the CSV file
-            with open("finaldata.csv", "+w", newline="\n") as finaldata:
+            with open("finaldata.csv", "w", newline="\n") as finaldata:
                 csv_writer = csv.writer(finaldata)
                 csv_writer.writerows(csv_data)
 
@@ -97,10 +98,16 @@ start_invoice = "B13"
 start_issuer = "D13"
 start_price = "G13"
 start_date = "C13"
+start_info = "H13"
+
 
 for i, invoice in enumerate(InvoiceNumbers):
+
     ws[start_invoice] = invoice
+    ws[start_info] = "transport client distop5101/113/9*7"
     start_invoice = f'B{13 + i + 1}'
+    start_info = f'H{13 + i + 1}'
+    
 
 for i, issuer in enumerate(Issuers):
     
@@ -116,6 +123,8 @@ for i, date in enumerate(Dates):
     
     ws[start_date] = date
     start_date = f'C{13 + i + 1}'
+
+os.remove("finaldata.csv")
 
 # The proper file name is written automatically, one less thing to manually worry about :) 
 wb.save("Decont " + current_month_ro + " " + current_year + " " + UserName + ".xlsx")
