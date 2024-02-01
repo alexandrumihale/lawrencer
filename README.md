@@ -2,7 +2,7 @@
 
 ## DISCLAIMER
 
-This script is not an official Bolt application and it is in no way associated with Bolt, Bolt Romania, Bolt Technology or OÜ (Estonia) and it is intented to be used for demonstration/portfolio purposes.
+This script is <b>not</b> an official Bolt application and it is in no way associated with Bolt, Bolt Romania, Bolt Technology or OÜ (Estonia) and it is intented to be used for demonstration/portfolio purposes.
 
 Feel free to use this script at your own discretion.
 
